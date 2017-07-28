@@ -5,6 +5,9 @@ const fs = require("fs");
 const http = require("http");
 const url = require("url");
 const path = require("path");
+const moment = require("moment");
+
+const SERVER = "54.152.30.0"
 
 function request(options) {
   return new Promise((res, rej) => {
@@ -98,6 +101,7 @@ class SpotifyController {
     return spotifyGet(options).then(body => body.items);
   }
   fetchToken() {
+    if(tokens.expiry - )
     let options = {
       method: "GET",
       url: "http://localhost:3000/refresh",

@@ -10,6 +10,7 @@
     "appendable-cli-menu": "^2.0.0",
     "chalk": "^2.0.1",
     "commander": "^2.11.0",
+    "moment": "^2.18.1",
     "opn": "^5.1.0",
     "request": "^2.81.0"
   }

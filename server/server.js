@@ -5,7 +5,7 @@ const request = require("request"); // "Request" library
 const querystring = require("querystring");
 const cookieParser = require("cookie-parser");
 
-const redirect_uri = "http://localhost:3000/token"; // Your redirect uri
+const redirect_uri = "http://bashify-cli.com/token"; // Your redirect uri
 const stateKey = "spotify_auth_state";
 const tokens = require("./tokens.json");
 
@@ -104,4 +104,6 @@ app.get("/refresh", (req, res) => {
     res.send(body.access_token);
   });
 });
-app.listen(3000);
+app.listen(3000, function() {
+  console.log("Started Server");
+});

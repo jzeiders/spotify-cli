@@ -1,0 +1,16 @@
+{
+  "author": "John Zeiders",
+  "name": "bashify",
+  "version": "0.0.5",
+  "license": "MIT",
+  "bin": {
+    "spotify": "./cli.js"
+  },
+  "dependencies": {
+    "appendable-cli-menu": "^2.0.0",
+    "chalk": "^2.0.1",
+    "commander": "^2.11.0",
+    "opn": "^5.1.0",
+    "request": "^2.81.0"
+  }
+}

@@ -1,0 +1,5 @@
+tokens.json
+node_modules
+cli/node_modules
+bashify-server.pem
+.vscode

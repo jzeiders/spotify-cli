@@ -1,0 +1,64 @@
+<!Doctype html>
+
+<head>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/css/materialize.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.min.js"></script>
+	<title> Spotify CLI </title>
+</head>
+
+<body>
+	<div id="not-logged-in">
+		<div class="title">
+			<h1> Bashify </h1>
+			<h3> The Spotify CLI </h3>
+			<a class="waves-effect waves-light btn-large pink accent-1" href="/login">
+				<i class="material-icons right">play_circle_outline</i>Login</a>
+		</div>
+	</div>
+	<div id="logged-in">
+		<div class="title">
+			<h1> Thanks for Using Bashify </h1>
+		</div>
+	</div>
+</body>
+
+<script>
+	window.onload = function () {
+		if (window.location.hash.length > 15) {
+			document.getElementById("not-logged-in").style.display = "none"
+		} else {
+			document.getElementById("logged-in").style.display = "none"
+		}
+		var hash = window.location.hash;
+		console.log(window.location.hash);
+		var access_token = hash.slice(hash.search("access_token") + 13, hash.search("refresh_token") - 1)
+		var refresh_token = hash.slice(hash.search("refresh_token") + 14);
+		console.log(access_token);
+		console.log(refresh_token);
+		if (hash.search("access_token") != -1) {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", 'http://localhost:7777?' + window.location.hash.slice(1));
+			xhr.send();
+		}
+	}
+
+</script>
+
+<style>
+	body {
+		background: #b2ebf2;
+		font-family: Roboto
+	}
+
+	.title {
+		margin: 10% 20%;
+		font-weight: 900;
+	}
+
+	a {
+		color: white;
+	}
+
+</style>

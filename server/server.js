@@ -8,6 +8,13 @@ const cookieParser = require("cookie-parser");
 const redirect_uri = "http://bashify-cli.com/token"; // Your redirect uri
 const stateKey = "spotify_auth_state";
 const tokens = require("./tokens.json");
+const winston = require("winston");
+var logger = new winston.Logger({
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: "refresh.log" })
+  ]
+});
 
 const app = express();
 app.use(cookieParser());
@@ -88,6 +95,7 @@ app.get("/token", (req, res) => {
 });
 app.get("/refresh", (req, res) => {
   console.log(req.query.refresh_token);
+  logger.info(req.query.refresh_token);
   let options = {
     method: "POST",
     url: "https://accounts.spotify.com/api/token",

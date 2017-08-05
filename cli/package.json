@@ -1,10 +1,11 @@
 {
   "author": "John Zeiders",
   "name": "bashify",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "license": "MIT",
   "bin": {
-    "spotify": "./cli.js"
+    "spotify": "./cli.js",
+    "bashify": "./cli.js"
   },
   "dependencies": {
     "appendable-cli-menu": "^2.0.0",
@@ -12,6 +13,11 @@
     "commander": "^2.11.0",
     "moment": "^2.18.1",
     "opn": "^5.1.0",
-    "request": "^2.81.0"
+    "request": "^2.81.0",
+    "universal-analytics": "^0.4.13",
+    "uuid": "^3.1.0"
+  },
+  "devDependencies": {
+    "nock": "^9.0.14"
   }
 }

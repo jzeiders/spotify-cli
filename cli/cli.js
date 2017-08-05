@@ -4,24 +4,45 @@ const Chalk = require("chalk");
 const program = require("commander");
 const Menu = require("appendable-cli-menu");
 const Spotify = require("./spotify");
+const UA = require("universal-analytics");
+const uuidv4 = require("uuid/v4");
+const fs = require("fs");
 const Player = new Spotify();
+const GAID = "UA-104115780-1";
 
-async function main() {
-  await Player.fetchToken();
-  program.parse(process.argv);
+var User;
+try {
+  let UserData = require("./user.json");
+  User = new UA(GAID, UserData.uuid);
+} catch (e) {
+  let uuid = uuidv4();
+  fs.writeFileSync("./user.json", JSON.stringify({ uuid }));
+  User = new UA(GAID, uuid);
+}
+
+function main() {
+  Player.fetchToken().then(() => {
+    program.parse(process.argv);
+  });
 }
 program
   .command("play [name...]")
   .description("plays a given track")
   .action(name => {
-    if (name.length) Player.playSong(name.join("")).then(printTrack);
-    else Player.play().then(printPlaying);
+    User.event("CLI", "Play");
+    if (name.length) {
+      Player.playSong(name.join("")).then(printTrack).catch(err => {
+        if (err === "none") {
+          printNoMatching("track");
+        }
+      });
+    } else Player.play().then(printPlaying);
   });
 
-program
-  .command("pause")
-  .description("pauses spotify")
-  .action(() => Player.pause().then(printPaused));
+program.command("pause").description("pauses spotify").action(() => {
+  User.event("CLI", "Pause");
+  Player.pause().then(printPaused);
+});
 program
   .command("search")
   .arguments("<term...>")
@@ -31,6 +52,7 @@ program
   .option("-b, --album", "Search Albums")
   .option("-a, --artist", "Search Artists")
   .action((term, { track, playlist, album, artist }) => {
+    User.event("CLI", "Search").send();
     term = term.join(" ");
     if (playlist) searchPlaylist(term);
     else if (track) searchTrack(term);
@@ -38,50 +60,63 @@ program
     else if (artist) searchArtist(term);
     else searchTrack(term);
   });
-program
-  .command("skip")
-  .description("skips the current track")
-  .action(() => Player.skip().then(printSkip));
-program
-  .command("shuffle")
-  .description("sets shuffle")
-  .action(() => Player.shuffle().then(printShuffle));
-program
-  .command("stopshuffle")
-  .description("disables shuffle")
-  .action(() => Player.stopShuffle().then(printStopShuffle));
-program
-  .command("mute")
-  .description("mutes spotify")
-  .action(() => Player.setVolume(0));
+program.command("skip").description("skips the current track").action(() => {
+  User.event("CLI", "Skip").send();
+  Promise.all([Player.getCurrentTrack(), Player.skip()]).then(result => {
+    printSkip(result[0]);
+  });
+});
+program.command("shuffle").description("enables shuffle").action(() => {
+  User.event("CLI", "shuffle").send();
+  Player.shuffle().then(printShuffle);
+});
+program.command("stopshuffle").description("disables shuffle").action(() => {
+  User.event("CLI", "stopshuffle").send();
+  Player.stopShuffle().then(printStopShuffle);
+});
+program.command("mute").description("mutes spotify").action(() => {
+  User.event("CLI", "mute").send();
+  Player.setVolume(0);
+});
 program
   .command("volume [vol]")
-  .option("-M, max", "sets the volume to max")
+  .option("-M, --max", "sets the volume to max")
   .option("-m, --mute", "mutes spotify")
   .description("sets the volume")
   .action((vol, { max, mute }) => {
+    User.event("CLI", "volume").send();
     if (max) vol = 100;
     if (mute) vol = 0;
-    Player.setVolume(vol).then(printVolume.bind(vol));
+    Player.setVolume(vol).then(printVolume.bind(null, vol));
   });
-program.command("now").description("shows currently playing track");
+program
+  .command("now")
+  .description("shows currently playing track")
+  .action(() => {
+    User.event("CLI", "now").send();
+    nowPlaying();
+  });
 
 program
   .command("radio <artist...>")
   .description("starts artist radio")
   .action(artist => {
+    User.event("CLI", "radio").send();
     radio(artist.join(" "));
   });
 program.command("init").description("Gets Initial Tokens").action(init);
 
 main();
+
 function init() {
   Player.login().then(() => {
     console.log("Successfully Authorized");
     process.exit();
   });
 }
-
+function nowPlaying() {
+  Player.getCurrentTrack().then(printCurrentTrack);
+}
 function printShuffle() {
   console.log(Chalk.cyan("Shuffle is: ") + Chalk.green("enabled"));
 }
@@ -94,8 +129,12 @@ function printVolume(vol) {
   console.log("The volume is now: " + Chalk.blue(vol));
 }
 
-function printSkip() {
-  console.log(Chalk.green("Skipped Current Track"));
+function printSkip(now) {
+  console.log(Chalk.yellow("Skipped: ") + trackToString(now));
+  setTimeout(nowPlaying, 500);
+}
+function printCurrentTrack(track) {
+  console.log(Chalk.green("Now Playing: ") + trackToString(track));
 }
 
 function printPlaying() {
@@ -117,6 +156,10 @@ function printTrack(track) {
 function searchTrack(term) {
   let menu = Menu("Select A Song", track => Player.playTrack(track.value));
   Player.searchTracks(term).then(tracks => {
+    if (tracks.length == 0) {
+      printNoMatching("tracks");
+      process.exit();
+    }
     tracks.slice(0, 10).map(track => {
       menu.add({
         name: trackToString(track),
@@ -143,6 +186,10 @@ function searchArtist(term) {
     Player.playArtist(artist.value)
   );
   Player.searchArtists(term).then(artists => {
+    if (artists.length == 0) {
+      printNoMatching("artists");
+      process.exit();
+    }
     artists.slice(0, 10).map(artist => {
       menu.add({
         name: artist.name,
@@ -157,6 +204,10 @@ function searchPlaylist(term) {
     Player.playPlaylist(Playlist.value)
   );
   Player.searchPlaylists(term).then(Playlists => {
+    if (Playlists.length == 0) {
+      printNoMatching("playlists");
+      process.exit();
+    }
     Playlists.slice(0, 10).map(Playlist => {
       menu.add({
         name: Playlist.name,
@@ -169,6 +220,10 @@ function searchPlaylist(term) {
 function searchAlbum(term) {
   let menu = Menu("Select A Album", Album => Player.playAlbum(Album.value));
   Player.searchAlbums(term).then(Albums => {
+    if (Albums.length == 0) {
+      printNoMatching("albums");
+      process.exit();
+    }
     Albums.slice(0, 10).map(Album => {
       menu.add({
         name: Album.name,
@@ -177,3 +232,10 @@ function searchAlbum(term) {
     });
   });
 }
+function printNoMatching(term) {
+  console.log("No Matching " + Chalk.magenta(term) + " found");
+}
+
+// process.on("UnhandledPromiseRejectionWarning", e => {
+//   console.loog(e);
+// });

@@ -4,8 +4,6 @@
 
     npm install -g bashify
 
-    bashify init  //Sets up Tokens
-
 ### Usage
 Commands
 | Command                    | Result                        |
@@ -21,6 +19,7 @@ Commands
 | volume [options] [vol]     | sets the volume               |
 | now                        | shows currently playing track |
 | radio <artist...>          | starts artist radio           |
+| devices                    | select playback device        |
 
 ### Author
 John Zeiders

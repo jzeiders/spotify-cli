@@ -38,25 +38,29 @@ class SpotifyController {
     return this.spotifyGet(options).then(body => body.items);
   }
   fetchToken() {
-    let tokens;
-    try {
-      tokens = require("./tokens.json");
-      let options = {
-        method: "GET",
-        url: SERVER_URL + "/refresh",
-        qs: {
-          refresh_token: tokens.refresh_token
-        }
-      };
-      return request(options).then(body => this.setToken(body)).catch(() => {
-        console.log("Unable to Connect");
-      });
-    } catch (e) {
-      return Promise.resolve();
-    }
+    let tokens = require("./tokens.json");
+    let options = {
+      method: "GET",
+      url: SERVER_URL + "/refresh",
+      qs: {
+        refresh_token: tokens.refresh_token
+      }
+    };
+    return request(options).then(body => this.setToken(body)).catch(() => {
+      console.log("Unable to Connect");
+    });
+  }
+  getDevices() {
+    let options = {
+      url: "me/player/devices"
+    };
+    return this.spotifyGet(options).then(body => body.devices);
   }
   getCurrentTrack() {
-    return this.getStatus().then(body => body.item);
+    let options = {
+      url: "me/player/currently-playing"
+    };
+    return this.spotifyGet(options).then(body => body.item);
   }
   getRecommendations(artist_id) {
     let options = {
@@ -69,7 +73,7 @@ class SpotifyController {
   }
   getStatus() {
     let options = {
-      url: "me/player/currently-playing"
+      url: "me/player"
     };
     return this.spotifyGet(options);
   }
@@ -169,7 +173,15 @@ class SpotifyController {
     };
     return this.spotifyPut(options).then(() => tracks[0]);
   }
-
+  setActiveDevice(deviceID) {
+    let options = {
+      url: "me/player",
+      body: {
+        device_ids: [deviceID]
+      }
+    };
+    return this.spotifyPut(options);
+  }
   searchAlbums(term) {
     let options = {
       url: "search",

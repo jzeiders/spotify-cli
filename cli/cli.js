@@ -21,9 +21,16 @@ try {
 }
 
 function main() {
-  Player.fetchToken().then(() => {
-    program.parse(process.argv);
-  });
+  try {
+    let tokens = require("./tokens.json"); // Token check
+    Player.fetchToken().then(() => {
+      program.parse(process.argv);
+    });
+  } catch (e) {
+    console.log("Missing Access Token");
+    console.log("Opening Browser for Oauth");
+    init();
+  }
 }
 program
   .command("play [name...]")
@@ -91,10 +98,10 @@ program
   });
 program
   .command("now")
-  .description("shows currently playing track")
+  .description("shows currently playing track and other info")
   .action(() => {
     User.event("CLI", "now").send();
-    nowPlaying();
+    Player.getStatus().then(printStatus);
   });
 
 program
@@ -104,15 +111,35 @@ program
     User.event("CLI", "radio").send();
     radio(artist.join(" "));
   });
+program
+  .command("devices")
+  .description("lets you transfer playback")
+  .action(selectActiveDevice);
+
 program.command("init").description("Gets Initial Tokens").action(init);
 
 main();
+
+function printStatus(status) {
+  printCurrentTrack(status.item);
+  printPlayStatus(status.is_playing);
+  printDevice(status.device);
+  printVolume(status.device.volume_percent);
+  status.shuffleState ? printShuffle() : printStopShuffle;
+}
 
 function init() {
   Player.login().then(() => {
     console.log("Successfully Authorized");
     process.exit();
   });
+}
+function printPlayStatus(status) {
+  if (status) console.log("Spotify is: " + Chalk.green("Playing"));
+  else console.log("Spotify is: " + Chalk.yellow("Paused"));
+}
+function printDevice(device) {
+  console.log("Spotify is running on: " + Chalk.cyan(device.name));
 }
 function nowPlaying() {
   Player.getCurrentTrack().then(printCurrentTrack);
@@ -232,10 +259,29 @@ function searchAlbum(term) {
     });
   });
 }
+function selectActiveDevice() {
+  let menu = Menu("Select A Device", Device =>
+    Player.setActiveDevice(Device.value)
+  );
+  Player.getDevices().then(Devices => {
+    Devices.map(Device => {
+      menu.add({
+        name:
+          Device.name + (Device.is_active ? Chalk.yellow(" (Active) ") : ""),
+        value: Device.id
+      });
+    });
+  });
+}
+
 function printNoMatching(term) {
   console.log("No Matching " + Chalk.magenta(term) + " found");
 }
 
-// process.on("UnhandledPromiseRejectionWarning", e => {
-//   console.loog(e);
-// });
+process.on("uncaughtException", function(err) {
+  console.log("Something is Broken");
+  console.log("Sent Crash Report");
+  User.event("Error", err, function(e) {
+    console.log("Crash Report Unable to send");
+  });
+});

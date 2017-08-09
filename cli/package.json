@@ -1,8 +1,12 @@
 {
   "author": "John Zeiders",
   "name": "bashify",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jzeiders/spotify-cli"
+  },
   "bin": {
     "spotify": "./cli.js",
     "bashify": "./cli.js"
